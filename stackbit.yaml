@@ -1,4 +1,4 @@
-stackbitVersion: ~0.3.0
+stackbitVersion: ~0.4.0
 ssgName: nextjs
 ssgVersion: 9.4.4
 buildCommand: npm run build
@@ -80,7 +80,7 @@ models:
         options:
           - light
           - dark
-        default: dark
+        default: light
         description: The color scheme of the site
         required: true
       - type: enum
@@ -101,6 +101,11 @@ models:
         label: Footer configuration
         models:
           - footer
+      - type: model
+        name: announcement
+        label: Announcement configuration
+        models:
+          - announcement
     file: config.json
   header:
     type: object
@@ -147,40 +152,6 @@ models:
           type: model
           models:
             - action
-      - type: boolean
-        name: has_anncmnt
-        label: Enable announcement
-        description: Display the announcement above the site header
-        default: false
-      - type: markdown
-        name: anncmnt_content
-        label: Announcement content
-        description: The text content of the announcement
-      - type: enum
-        name: anncmnt_align
-        label: Announcement horizontal alignment
-        options:
-          - left
-          - right
-          - center
-        default: left
-        description: The horizontal alignment of the announcement content
-      - type: boolean
-        name: anncmnt_is_home_only
-        label: Show on home page
-        description: Display the announcement on the home page only.
-        default: false
-      - type: boolean
-        name: anncmnt_has_close
-        label: Enable announcement close
-        description: Display the announcement close button
-        default: false
-      - type: string
-        name: anncmnt_id
-        label: Announcement ID
-        description: >-
-          A unique identifier, required if close button is enabled. Must be
-          updated each time the announcement content changes
   footer:
     type: object
     label: Footer configuration
@@ -270,6 +241,44 @@ models:
           type: model
           models:
             - action
+  announcement:
+    type: object
+    label: Announcement configuration
+    labelField: anncmnt_content
+    fields:
+      - type: boolean
+        name: has_anncmnt
+        label: Enable announcement
+        description: Display the announcement above the site header
+        default: false
+      - type: markdown
+        name: anncmnt_content
+        label: Announcement content
+        description: The text content of the announcement
+      - type: enum
+        name: anncmnt_align
+        label: Announcement horizontal alignment
+        options:
+          - left
+          - right
+          - center
+        default: left
+        description: The horizontal alignment of the announcement content
+      - type: boolean
+        name: anncmnt_is_home_only
+        label: Show on home page only
+        description: Display the announcement on the home page only.
+        default: false
+      - type: boolean
+        name: anncmnt_has_close
+        label: Enable announcement close
+        description: Display the announcement close button
+        default: false
+      - type: string
+        name: anncmnt_id
+        label: Announcement ID
+        description: >-
+          A unique identifier, required if close button is enabled. Must be updated each time the announcement content changes
   person:
     type: data
     label: Person
@@ -461,15 +470,25 @@ models:
         name: seo
         models:
           - stackbit_page_meta
-  hero_section:
+  section:
     type: object
-    label: Hero section
+    label: Section
     labelField: title
     fields:
+      - type: string
+        name: section_id
+        label: Section ID
+        description: A unique identifier of the section, must not contain whitespace
       - type: string
         name: title
         label: Title
         description: The title of the section
+  hero_section:
+    type: object
+    label: Hero section
+    extends:
+      - section
+    fields:
       - type: string
         name: subtitle
         label: Subtitle
@@ -609,12 +628,9 @@ models:
   features_section:
     type: object
     label: Features section
-    labelField: title
+    extends:
+      - section
     fields:
-      - type: string
-        name: title
-        label: Title
-        description: The title of the section
       - type: string
         name: subtitle
         label: Subtitle
@@ -725,12 +741,9 @@ models:
   grid_section:
     type: object
     label: Grid section
-    labelField: title
+    extends:
+      - section
     fields:
-      - type: string
-        name: title
-        label: Title
-        description: The title of the section
       - type: string
         name: subtitle
         label: Subtitle
@@ -876,12 +889,9 @@ models:
   blog_feed_section:
     type: object
     label: Blog feed section
-    labelField: title
+    extends:
+      - section
     fields:
-      - type: string
-        name: title
-        label: Title
-        description: The title of the section
       - type: string
         name: subtitle
         label: Subtitle
@@ -1055,12 +1065,9 @@ models:
   cta_section:
     type: object
     label: CTA section
-    labelField: title
+    extends:
+      - section
     fields:
-      - type: string
-        name: title
-        label: Title
-        description: The title of the section
       - type: markdown
         name: content
         label: Content
@@ -1184,12 +1191,9 @@ models:
   form_section:
     type: object
     label: Form section
-    labelField: title
+    extends:
+      - section
     fields:
-      - type: string
-        name: title
-        label: Title
-        description: The title of the section
       - type: string
         name: subtitle
         label: Subtitle

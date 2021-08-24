@@ -1,104 +1,109 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
 import _ from 'lodash';
 
-import {classNames, Link, withPrefix, htmlToReact} from '../utils';
-import FooterMenu from './FooterMenu';
-import Icon from './Icon';
+import { classNames, Link, withPrefix, htmlToReact } from '../utils';
+import Action from './Action';
+import ActionIcon from './ActionIcon';
+import ActionLink from './ActionLink';
 
 export default class Footer extends React.Component {
-    render() {
-        let has_logo = false;
-        let footer_content = false;
-        let footer_social = false;
-        if (_.get(this.props, 'data.config.footer.logo', null)) {
-             has_logo = true;
-        }
-        if ((_.get(this.props, 'data.config.footer.content', null) || _.get(this.props, 'data.config.footer.links', null))) {
-             footer_content = true;
-        }
-        if ((_.get(this.props, 'data.config.footer.has_social', null) && _.get(this.props, 'data.config.footer.social_links', null))) {
-             footer_social = true;
-        }
+    renderNav(navLinks, navTitle, navKey) {
         return (
-            <React.Fragment>
-                <footer className="site-footer">
-                	{(((has_logo || _.get(this.props, 'data.config.footer.has_primary_nav', null)) || _.get(this.props, 'data.config.footer.has_secondary_nav', null)) || _.get(this.props, 'data.config.footer.has_tertiary_nav', null)) && (
-                	<div className="site-footer__nav py-5 py-md-6">
-                		<div className="container">
-                			<div className={classNames('grid', {'justify-md-center': has_logo === false})}>
-                				{has_logo && (
-                				<Link className="site-footer__logo cell-12 cell-md-5 my-4" href={withPrefix('/')}>
-                					<img src={withPrefix(_.get(this.props, 'data.config.footer.logo', null))} alt={_.get(this.props, 'data.config.header.logo_alt', null)} />
-                				</Link>
-                				)}
-                				{(_.get(this.props, 'data.config.footer.has_primary_nav', null) && _.get(this.props, 'data.config.footer.primary_nav_links', null)) && (
-                				<div className="site-footer__menu cell-12 cell-md my-3 my-md-4">
-                					{_.get(this.props, 'data.config.footer.primary_nav_title', null) && (
-                					<h2 className="h4 mb-3 mb-md-4">{_.get(this.props, 'data.config.footer.primary_nav_title', null)}</h2>
-                					)}
-                					<FooterMenu {...this.props} footer_menu={_.get(this.props, 'data.config.footer.primary_nav_links', null)} />
-                				</div>
-                				)}
-                				{(_.get(this.props, 'data.config.footer.has_secondary_nav', null) && _.get(this.props, 'data.config.footer.secondary_nav_links', null)) && (
-                				<div className="site-footer__menu cell-12 cell-md my-3 my-md-4">
-                					{_.get(this.props, 'data.config.footer.secondary_nav_title', null) && (
-                					<h2 className="h4 mb-3 mb-md-4">{_.get(this.props, 'data.config.footer.secondary_nav_title', null)}</h2>
-                					)}
-                					<FooterMenu {...this.props} footer_menu={_.get(this.props, 'data.config.footer.secondary_nav_links', null)} />
-                				</div>
-                				)}
-                				{(_.get(this.props, 'data.config.footer.has_tertiary_nav', null) && _.get(this.props, 'data.config.footer.tertiary_nav_links', null)) && (
-                				<div className="site-footer__menu cell-12 cell-md my-3 my-md-4">
-                					{_.get(this.props, 'data.config.footer.tertiary_nav_title', null) && (
-                					<h2 className="h4 mb-3 mb-md-4">{_.get(this.props, 'data.config.footer.tertiary_nav_title', null)}</h2>
-                					)}
-                					<FooterMenu {...this.props} footer_menu={_.get(this.props, 'data.config.footer.tertiary_nav_links', null)} />
-                				</div>
-                				)}
-                			</div>
-                		</div>
-                	</div>
-                	)}
-                	{(footer_content || footer_social) && (
-                	<div className="site-footer__info py-3 py-sm-4">
-                		<div className="container">
-                			<div className="grid items-center">
-                				{footer_content && (
-                				<div className={classNames('site-footer__copyright', 'cell-12', {'cell-sm': footer_social})}>
-                					{_.get(this.props, 'data.config.footer.content', null) && (
-                						<span>{htmlToReact(_.get(this.props, 'data.config.footer.content', null))}</span>
-                					)}
-                					{_.map(_.get(this.props, 'data.config.footer.links', null), (link, link_idx) => (
-                						<Link key={link_idx} href={withPrefix(_.get(link, 'url', null))}
-                							{...(_.get(link, 'new_window', null) ? ({target: '_blank'}) : null)}
-                							{...((_.get(link, 'new_window', null) || _.get(link, 'no_follow', null)) ? ({rel: (_.get(link, 'new_window', null) ? ('noopener ') : '') + (_.get(link, 'no_follow', null) ? ('nofollow') : '')}) : null)}>{_.get(link, 'label', null)}</Link>
-                					))}
-                				</div>
-                				)}
-                				{footer_social && (
-                				<div className={classNames('site-footer__social', 'cell-12', {'cell-sm-auto': footer_content})}>
-                					{_.map(_.get(this.props, 'data.config.footer.social_links', null), (link, link_idx) => {
-                					    let link_style = _.get(link, 'style', null) || 'link';
-                					    return (
-                    						(_.get(link, 'has_icon', null) && _.get(link, 'icon', null)) && (
-                    						<Link key={link_idx} href={withPrefix(_.get(link, 'url', null))}
-                    							{...(_.get(link, 'new_window', null) ? ({target: '_blank'}) : null)}
-                    							{...((_.get(link, 'new_window', null) || _.get(link, 'no_follow', null)) ? ({rel: (_.get(link, 'new_window', null) ? ('noopener ') : '') + (_.get(link, 'no_follow', null) ? ('nofollow') : '')}) : null)}
-                    							className={classNames('btn', 'btn--icon', {'btn--primary': link_style === 'primary', 'btn--secondary': link_style === 'secondary', 'btn--clear': link_style === 'link'})}>
-                    							<Icon {...this.props} icon={_.get(link, 'icon', null)} />
-                    							<span className="sr-only">{_.get(link, 'label', null)}</span>
-                    						</Link>
-                    						)
-                    					)
-                					})}
-                				</div>
-                				)}
-                			</div>
-                		</div>
-                	</div>
-                	)}
-                </footer>
-            </React.Fragment>
+            <div className="site-footer__menu cell-12 cell-md my-3 my-md-4">
+                {navTitle && (
+                    <h2 className="h4 mb-3 mb-md-4" {...fpath(`.${navKey}_nav_title`)}>
+                        {navTitle}
+                    </h2>
+                )}
+                <ul className="menu" {...fpath(`.${navKey}_nav_links`)}>
+                    {_.map(navLinks, (action, index) => (
+                        <li key={index} className="menu__item mb-1" {...fpath(`.${index}`)}>
+                            <Action action={action} />
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        );
+    }
+
+    render() {
+        const config = _.get(this.props, 'config');
+        const footer = _.get(config, 'footer');
+        const logo = _.get(footer, 'logo');
+        const logoAlt = _.get(footer, 'logo_alt', '');
+        const hasPrimaryNav = _.get(footer, 'has_primary_nav');
+        const primaryNavTitle = _.get(footer, 'primary_nav_title');
+        const primaryNavLinks = _.get(footer, 'primary_nav_links');
+        const hasSecondaryNav = _.get(footer, 'has_secondary_nav');
+        const secondaryNavTitle = _.get(footer, 'secondary_nav_title');
+        const secondaryNavLinks = _.get(footer, 'secondary_nav_links');
+        const hasTertiaryNav = _.get(footer, 'has_tertiary_nav');
+        const tertiaryNavTitle = _.get(footer, 'tertiary_nav_title');
+        const tertiaryNavLinks = _.get(footer, 'tertiary_nav_links');
+        const hasSocial = _.get(footer, 'has_social');
+        const socialLinks = _.get(footer, 'social_links');
+        const copyright = _.get(footer, 'content');
+        const links = _.get(footer, 'links');
+
+        return (
+            <footer className="site-footer" {...fpath(`${config.__metadata.id}:footer`)}>
+                {(logo ||
+                    (hasPrimaryNav && !_.isEmpty(primaryNavLinks)) ||
+                    (hasSecondaryNav && !_.isEmpty(secondaryNavLinks)) ||
+                    (hasTertiaryNav && !_.isEmpty(tertiaryNavLinks))) && (
+                    <div className="site-footer__nav py-5 py-md-6">
+                        <div className="container">
+                            <div
+                                className={classNames('grid', {
+                                    'justify-md-center': logo
+                                })}
+                            >
+                                {logo && (
+                                    <Link className="site-footer__logo cell-12 cell-md-5 my-4" href={withPrefix('/')}>
+                                        <img src={withPrefix(logo)} alt={logoAlt} {...fpath('.logo.url#@src')} />
+                                    </Link>
+                                )}
+                                {hasPrimaryNav && !_.isEmpty(primaryNavLinks) && this.renderNav(primaryNavLinks, primaryNavTitle, 'primary')}
+                                {hasSecondaryNav && !_.isEmpty(secondaryNavLinks) && this.renderNav(secondaryNavLinks, secondaryNavTitle, 'secondary')}
+                                {hasTertiaryNav && !_.isEmpty(tertiaryNavLinks) && this.renderNav(tertiaryNavLinks, tertiaryNavTitle, 'tertiary')}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {(copyright || !_.isEmpty(links) || (hasSocial && !_.isEmpty(socialLinks))) && (
+                    <div className="site-footer__info py-3 py-sm-4">
+                        <div className="container">
+                            <div className="grid items-center">
+                                {(copyright || !_.isEmpty(links)) && (
+                                    <div
+                                        className={classNames('site-footer__copyright', 'cell-12', {
+                                            'cell-sm': hasSocial && !_.isEmpty(socialLinks)
+                                        })}
+                                    >
+                                        {copyright && <span {...fpath('.content')}>{htmlToReact(copyright)}</span>}
+                                        {_.map(links, (action, index) => (
+                                            <ActionLink key={index} action={action} annotationPrefix={`${config.__metadata.id}:footer.links.${index}`} />
+                                        ))}
+                                    </div>
+                                )}
+                                {hasSocial && !_.isEmpty(socialLinks) && (
+                                    <div
+                                        className={classNames('site-footer__social', 'cell-12', {
+                                            'cell-sm-auto': copyright || !_.isEmpty(links)
+                                        })}
+                                        {...fpath('.social_links .has_social')}
+                                    >
+                                        {_.map(socialLinks, (action, index) => (
+                                            <ActionIcon key={index} action={action} annotationPrefix={`${config.__metadata.id}:footer.social_links.${index}`} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </footer>
         );
     }
 }

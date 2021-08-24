@@ -1,50 +1,135 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
+import Router from 'next/router';
 import _ from 'lodash';
 
-import {Link, withPrefix} from '../utils';
+import { Link, withPrefix, classNames, getPageUrl } from '../utils';
+import Action from './Action';
 import Icon from './Icon';
-import HeaderMenu from './HeaderMenu';
 
 export default class Header extends React.Component {
-    render() {
+    constructor(props) {
+        super(props);
+        this.handleWindowResize = this.handleWindowResize.bind(this);
+        this.handleRouteChange = this.handleRouteChange.bind(this);
+        this.menuOpenRef = React.createRef();
+    }
+
+    componentDidMount() {
+        window.addEventListener('resize', this.handleWindowResize, true);
+        Router.events.on('routeChangeStart', this.handleRouteChange);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.handleWindowResize, true);
+        Router.events.off('routeChangeStart', this.handleRouteChange);
+    }
+
+    handleWindowResize() {
+        const menuOpenElm = _.get(this.menuOpenRef, 'current.offsetParent');
+        if (menuOpenElm === null) {
+            document.body.classList.remove('js-nav-open');
+        }
+    }
+
+    handleRouteChange() {
+        document.body.classList.remove('js-nav-open');
+    }
+
+    handleMenuToggle(event) {
+        event.preventDefault();
+        document.body.classList.toggle('js-nav-open');
+    }
+
+    renderNavLinks(navLinks, pageUrl, navKey) {
         return (
-            <header className="site-header py-2">
-            	<div className="container">
-            		<nav className="navbar flex items-center" aria-label="Main Navigation">
-            			<Link className="sr-only" href="#content">Skip to main content</Link>
-            			<div className="navbar__branding mr-2">
-            				{_.get(this.props, 'data.config.header.logo', null) ? (
-            				<Link className="navbar__logo m-0" href={withPrefix('/')}><img src={withPrefix(_.get(this.props, 'data.config.header.logo', null))} alt={_.get(this.props, 'data.config.header.logo_alt', null)} /></Link>
-            				) : 
-            				<Link className="navbar__title h4 m-0" href={withPrefix('/')}>{_.get(this.props, 'data.config.header.title', null)}</Link>
-            				}
-            			</div>
-            			{(_.get(this.props, 'data.config.header.has_primary_nav', null) || _.get(this.props, 'data.config.header.has_secondary_nav', null)) && (<React.Fragment>
-            			<div className="navbar__container flex-md-auto">
-            				<div className="navbar__scroller">
-            					<div className="navbar__inner">
-            						<button aria-label="Close" className="btn btn--icon btn--clear navbar__close-btn js-nav-toggle">
-            							<Icon {...this.props} icon={'close'} />
-            							<span className="sr-only">Close</span>
-            						</button>
-            						<div className="navbar__menu flex-md">
-            							{(_.get(this.props, 'data.config.header.has_primary_nav', null) && _.get(this.props, 'data.config.header.primary_nav_links', null)) && (
-            								<HeaderMenu {...this.props} header_menu={_.get(this.props, 'data.config.header.primary_nav_links', null)} page={this.props.page} />
-            							)}
-            							{(_.get(this.props, 'data.config.header.has_secondary_nav', null) && _.get(this.props, 'data.config.header.secondary_nav_links', null)) && (
-            								<HeaderMenu {...this.props} header_menu={_.get(this.props, 'data.config.header.secondary_nav_links', null)} page={this.props.page} />
-            							)}
-            						</div>
-            					</div>
-            				</div>
-            			</div>
-            			<button aria-label="Menu" className="btn btn--icon btn--clear navbar__menu-btn js-nav-toggle ml-auto">
-            				<Icon {...this.props} icon={'menu'} />
-            				<span className="sr-only">Menu</span>
-            			</button>
-            			</React.Fragment>)}
-            		</nav>
-            	</div>
+            <ul className="menu flex-md items-md-center" {...fpath(`.${navKey}_nav_links`)}>
+                {_.map(navLinks, (action, index) => {
+                    const actionUrl = _.trim(_.get(action, 'url'), '/');
+                    const actionStyle = _.get(action, 'style', 'link');
+                    return (
+                        <li
+                            key={index}
+                            className={classNames('menu__item', 'ml-md-3', {
+                                'is-active': pageUrl === actionUrl && actionStyle === 'link',
+                                'menu__item-btn': actionStyle !== 'link'
+                            })}
+                            {...fpath(`.${index}`)}
+                        >
+                            <Action action={action} />
+                        </li>
+                    );
+                })}
+            </ul>
+        );
+    }
+
+    render() {
+        const page = _.get(this.props, 'page');
+        const pageUrl = _.trim(getPageUrl(page), '/');
+        const config = _.get(this.props, 'config');
+        const header = _.get(config, 'header');
+        const logo = _.get(header, 'logo');
+        const logoAlt = _.get(header, 'logo_alt', '');
+        const title = _.get(header, 'title');
+        const hasPrimaryNav = _.get(header, 'has_primary_nav');
+        const primaryNavLinks = _.get(header, 'primary_nav_links');
+        const hasSecondaryNav = _.get(header, 'has_secondary_nav');
+        const secondaryNavLinks = _.get(header, 'secondary_nav_links');
+
+        return (
+            <header className="site-header py-2" {...fpath(`${config.__metadata.id}:header`)}>
+                <div className="container">
+                    <nav className="navbar flex items-center" aria-label="Main Navigation">
+                        <Link className="sr-only" href="#content">
+                            Skip to main content
+                        </Link>
+                        <div className="navbar__branding mr-2">
+                            {logo ? (
+                                <Link className="navbar__logo m-0" href={withPrefix('/')}>
+                                    <img src={withPrefix(logo)} alt={logoAlt} {...fpath('.logo_alt#@alt .logo.url#@src')} />
+                                </Link>
+                            ) : (
+                                <Link className="navbar__title h4 m-0" href={withPrefix('/')} {...fpath('.title')}>
+                                    {title}
+                                </Link>
+                            )}
+                        </div>
+                        {((hasPrimaryNav && !_.isEmpty(primaryNavLinks)) || (hasSecondaryNav && !_.isEmpty(secondaryNavLinks))) && (
+                            <React.Fragment>
+                                <div className="navbar__container flex-md-auto">
+                                    <div className="navbar__scroller">
+                                        <div className="navbar__inner">
+                                            <button
+                                                aria-label="Close"
+                                                className="btn btn--icon btn--clear navbar__close-btn"
+                                                onClick={this.handleMenuToggle.bind(this)}
+                                            >
+                                                <Icon icon={'close'} />
+                                                <span className="sr-only">Close</span>
+                                            </button>
+                                            <div className="navbar__menu flex-md">
+                                                {hasPrimaryNav && !_.isEmpty(primaryNavLinks) && this.renderNavLinks(primaryNavLinks, pageUrl, 'primary')}
+                                                {hasSecondaryNav &&
+                                                    !_.isEmpty(secondaryNavLinks) &&
+                                                    this.renderNavLinks(secondaryNavLinks, pageUrl, 'secondary')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    aria-label="Menu"
+                                    className="btn btn--icon btn--clear navbar__menu-btn ml-auto"
+                                    ref={this.menuOpenRef}
+                                    onClick={this.handleMenuToggle.bind(this)}
+                                >
+                                    <Icon icon={'menu'} />
+                                    <span className="sr-only">Menu</span>
+                                </button>
+                            </React.Fragment>
+                        )}
+                    </nav>
+                </div>
             </header>
         );
     }

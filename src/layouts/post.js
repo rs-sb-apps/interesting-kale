@@ -1,59 +1,90 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
 import _ from 'lodash';
 import moment from 'moment-strftime';
 
-import {Layout} from '../components/index';
-import {classNames, withPrefix, markdownify} from '../utils';
+import { Layout } from '../components/index';
+import { classNames, withPrefix, markdownify } from '../utils';
 import BlogPostCategories from '../components/BlogPostCategories';
 import BlogPostAuthor from '../components/BlogPostAuthor';
 import BlogPostTags from '../components/BlogPostTags';
 
 export default class Post extends React.Component {
     render() {
-        let has_image = false;
-        let image_pos = _.get(this.props, 'page.image_position', null) || 'top';
-        if (_.get(this.props, 'page.image', null)) {
-             has_image = true;
-        }
+        const data = _.get(this.props, 'data');
+        const config = _.get(data, 'config');
+        const page = _.get(this.props, 'page');
+        const title = _.get(page, 'title');
+        const subtitle = _.get(page, 'subtitle');
+        const image = _.get(page, 'image');
+        const imageAlt = _.get(page, 'image_alt', '');
+        const imagePosition = _.get(page, 'image_position', 'top');
+        const date = _.get(page, 'date');
+        const dateTimeAttr = moment(date).strftime('%Y-%m-%d %H:%M');
+        const formattedDate = moment(date).strftime('%B %d, %Y');
+        const author = _.get(page, 'author');
+        const categories = _.get(page, 'categories', []);
+        const tags = _.get(page, 'tags', []);
+        const markdownContent = _.get(page, 'markdown_content');
+
         return (
-            <Layout {...this.props}>
-            <article className="post py-5 py-sm-6 py-md-7">
-            	<div className={classNames('post__hero', 'container', {'container--medium': (image_pos === 'top') || (has_image === false)})}>
-            		<div className={classNames('mb-4', {'mb-md-5': image_pos !== 'top', 'mb-md-6': image_pos !== 'top', 'grid': image_pos !== 'top', 'items-center': has_image && (image_pos !== 'top')})}>
-            			{has_image && (
-            			<div className={classNames('post__image', 'mb-3', {'cell-12': image_pos !== 'top', 'cell-lg-7': image_pos !== 'top', 'mb-lg-0': image_pos !== 'top'})}>
-            				<img src={withPrefix(_.get(this.props, 'page.image', null))} alt={_.get(this.props, 'page.image_alt', null)} />
-            			</div>
-            			)}
-            			<header className={classNames('post__header', {'cell-12': image_pos !== 'top', 'cell-lg-5': image_pos !== 'top', 'order-lg-first': has_image && (image_pos === 'right')})}>
-            				<div className="post__meta mb-2">
-            					{_.get(this.props, 'page.categories', null) && (<React.Fragment>
-            						<BlogPostCategories {...this.props} categories={_.get(this.props, 'page.categories', null)} container_class={'post__cat'} />
-            						<span className="post__meta-sep"> &middot; </span>
-            					</React.Fragment>)}
-            					<span className="post__date"><time dateTime={moment(_.get(this.props, 'page.date', null)).strftime('%Y-%m-%d %H:%M')}>{moment(_.get(this.props, 'page.date', null)).strftime('%B %d, %Y')}</time></span>
-            				</div>
-            				<h1 className="post__title mt-0">{_.get(this.props, 'page.title', null)}</h1>
-            				{_.get(this.props, 'page.subtitle', null) && (
-            					<p className="post__subtitle">{_.get(this.props, 'page.subtitle', null)}</p>
-            				)}
-            				{_.get(this.props, 'page.author', null) && (
-            					<BlogPostAuthor {...this.props} author={_.get(this.props, 'page.author', null)} container_class={'post__byline'} avatar_size={'medium'} />
-            				)}
-            			</header>
-            		</div>
-            	</div>
-            	<div className="container container--medium">
-            		<div className="post__body text-block">
-            			{markdownify(_.get(this.props, 'page.content', null))}
-            		</div>
-            		{_.get(this.props, 'page.tags', null) && (
-            		<footer className="post__footer mt-4 mt-md-5">
-            			<BlogPostTags {...this.props} tags={_.get(this.props, 'page.tags', null)} />
-            		</footer>
-            		)}
-            	</div>
-            </article>
+            <Layout page={page} config={config}>
+                <article className="post py-5 py-sm-6 py-md-7">
+                    <div
+                        className={classNames('post__hero', 'container', {
+                            'container--medium': _.isEmpty(image) || imagePosition === 'top'
+                        })}
+                    >
+                        <div
+                            className={classNames('mb-4', {
+                                'mb-sm-5': imagePosition !== 'top',
+                                'mb-md-6': imagePosition !== 'top',
+                                'grid': imagePosition !== 'top',
+                                'items-center': image && imagePosition !== 'top'
+                            })}
+                        >
+                            {image && (
+                                <div
+                                    className={classNames('post__image', 'mb-3', {
+                                        'cell-12': imagePosition !== 'top',
+                                        'cell-lg-7': imagePosition !== 'top',
+                                        'mb-lg-0': imagePosition !== 'top'
+                                    })}
+                                >
+                                    <img src={withPrefix(image)} alt={imageAlt} {...fpath('image.url#@src')} />
+                                </div>
+                            )}
+                            <header
+                                className={classNames('post__header', {
+                                    'cell-12': imagePosition !== 'top',
+                                    'cell-lg-5': imagePosition !== 'top',
+                                    'order-lg-first': image && imagePosition === 'right'
+                                })}
+                            >
+                                <div className="post__meta mb-2">
+                                    {!_.isEmpty(categories) && (
+                                        <React.Fragment>
+                                            <BlogPostCategories categories={categories} data={data} containerClass={'post__cat'} annotationPrefix="categories" />
+                                            <span className="post__meta-sep"> &middot; </span>
+                                        </React.Fragment>
+                                    )}
+                                    <span className="post__date"><time dateTime={dateTimeAttr} {...fpath('date')}>{formattedDate}</time></span>
+                                </div>
+                                <h1 className="post__title mt-0" {...fpath('title')}>{title}</h1>
+                                {subtitle && <p className="post__subtitle" {...fpath('subtitle')}>{subtitle}</p>}
+                                {author && <BlogPostAuthor author={author} data={data} containerClass={'post__byline'} avatarSize={'medium'} annotationPrefix="author" />}
+                            </header>
+                        </div>
+                    </div>
+                    <div className="container container--medium">
+                        {markdownContent && <div className="post__body text-block" {...fpath('markdown_content')}>{markdownify(markdownContent)}</div>}
+                        {!_.isEmpty(tags) && (
+                            <footer className="post__footer mt-4 mt-md-5">
+                                <BlogPostTags tags={tags} data={data} annotationPrefix="tags"/>
+                            </footer>
+                        )}
+                    </div>
+                </article>
             </Layout>
         );
     }

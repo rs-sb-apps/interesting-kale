@@ -1,79 +1,261 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
 import _ from 'lodash';
+import moment from 'moment-strftime';
 
-import {classNames, toStyleObj, withPrefix, getPages} from '../utils';
-import BlogFeedItemFilter from './BlogFeedItemFilter';
+import { classNames, Link, withPrefix, getData, getPageUrl } from '../utils';
 import SectionActions from './SectionActions';
+import SectionBackground from './SectionBackground';
+import BlogPostCategories from './BlogPostCategories';
+import BlogPostAuthor from './BlogPostAuthor';
 
 export default class BlogFeedSection extends React.Component {
-    render() {
-        let section = _.get(this.props, 'section', null);
-        let align_x = _.get(section, 'align', null) || 'center';
-        let padding_top = _.get(section, 'padding_top', null) || 'medium';
-        let padding_bottom = _.get(section, 'padding_bottom', null) || 'medium';
-        let bg_color = _.get(section, 'background_color', null) || 'none';
-        let bg_img_opacity_pct = _.get(section, 'background_image_opacity', null) || 100;
-        let bg_img_opacity = bg_img_opacity_pct * 0.01;
-        let bg_img_size = _.get(section, 'background_image_size', null) || 'cover';
-        let bg_img_position = _.get(section, 'background_image_position', null) || 'center center';
-        let bg_img_repeat = _.get(section, 'background_image_repeat', null) || 'no-repeat';
-        let section_author = false;
-        let section_category = false;
-        let section_tag = false;
-        let posts_all = getPages(this.props.pages, '/blog');
-        let posts_sorted = _.orderBy(posts_all, 'date', 'desc');
-        let show_recent = _.get(section, 'show_recent', null) || false;
-        let recent_count = _.get(section, 'recent_count', null) || 0;
-        let post_count = 0;
-        if (_.get(section, 'author', null)) {
-             section_author = _.get(section, 'author', null);
+    renderBlogFeedItemFilter(post, data, section, index) {
+        const sectionAuthorRef = _.get(section, 'author');
+        const sectionCategoryRef = _.get(section, 'category');
+        const sectionTagRef = _.get(section, 'tag');
+        if (sectionAuthorRef) {
+            const sectionAuthor = getData(data, sectionAuthorRef);
+            if (_.isEmpty(sectionAuthor)) {
+                return null;
+            }
+            const postAuthorRef = _.get(post, 'author');
+            if (!postAuthorRef) {
+                return null;
+            }
+            const postAuthor = getData(data, postAuthorRef);
+            if (_.isEmpty(postAuthor)) {
+                return null;
+            }
+            if (postAuthor.id === sectionAuthor.id) {
+                return this.renderBlogFeedItem(post, data, section, index);
+            }
+        } else if (sectionCategoryRef) {
+            const sectionCategory = getData(data, sectionCategoryRef);
+            if (_.isEmpty(sectionCategory)) {
+                return null;
+            }
+            const postCategoryRefs = _.get(post, 'categories');
+            const postCategories = _.map(postCategoryRefs, (postCategoryRef) => {
+                return getData(data, postCategoryRef);
+            });
+            const category = _.find(postCategories, { id: sectionCategory.id });
+            if (category) {
+                return this.renderBlogFeedItem(post, data, section, index);
+            }
+        } else if (sectionTagRef) {
+            const sectionTag = getData(data, sectionTagRef);
+            if (_.isEmpty(sectionTag)) {
+                return null;
+            }
+            const postTagRefs = _.get(post, 'tags');
+            const postTags = _.map(postTagRefs, (postTagRef) => {
+                return getData(data, postTagRef);
+            });
+            const tag = _.find(postTags, { id: sectionTag.id });
+            if (tag) {
+                return this.renderBlogFeedItem(post, data, section, index);
+            }
+        } else {
+            return this.renderBlogFeedItem(post, data, section, index);
         }
-        if (_.get(section, 'category', null)) {
-             section_category = _.get(section, 'category', null);
-        }
-        if (_.get(section, 'tag', null)) {
-             section_tag = _.get(section, 'tag', null);
-        }
+        return null;
+    }
+
+    renderBlogFeedItem(post, data, section, index) {
+        const postUrl = getPageUrl(post, { withPrefix: true });
+        const title = _.get(post, 'title');
+        const image = _.get(post, 'thumb_image');
+        const imageAlt = _.get(post, 'thumb_image_alt', '');
+        const date = _.get(post, 'date');
+        const dateTimeAttr = moment(date).strftime('%Y-%m-%d %H:%M');
+        const formattedDate = moment(date).strftime('%B %d, %Y');
+        const author = _.get(post, 'author');
+        const categories = _.get(post, 'categories', []);
+        const excerpt = _.get(post, 'excerpt');
+        const sectionTitle = _.get(section, 'title');
+        const sectionColumns = _.get(section, 'blog_feed_cols', 'three');
+        const isCard = _.get(section, 'enable_cards');
+        const showImage = _.get(section, 'show_image');
+        const showDate = _.get(section, 'show_date');
+        const showCategories = _.get(section, 'show_categories');
+        const showAuthor = _.get(section, 'show_author');
+        const showExcerpt = _.get(section, 'show_excerpt');
+
         return (
-            <section className={classNames('section', 'blog-feed', {'has-border': _.get(section, 'has_border', null), 'has-cover': _.get(section, 'background_image', null), 'bg-none': bg_color === 'none', 'bg-primary': bg_color === 'primary', 'bg-secondary': bg_color === 'secondary', 'pt-4': padding_top === 'small', 'pt-6': (padding_top === 'medium') || (padding_top === 'large'), 'pt-md-7': padding_top === 'large', 'pb-4': padding_bottom === 'small', 'pb-6': (padding_bottom === 'medium') || (padding_bottom === 'large'), 'pb-md-7': padding_bottom === 'large'})}>
-            	{_.get(section, 'background_image', null) && (
-            	<div className="cover-img" style={toStyleObj('background-image: url(\'' + withPrefix(_.get(section, 'background_image', null)) + '\'); opacity: ' + bg_img_opacity + '; background-size: ' + bg_img_size + '; background-repeat: ' + bg_img_repeat + '; background-position: ' + bg_img_position)}/>
-            	)}
-            	{(_.get(section, 'title', null) || _.get(section, 'subtitle', null)) && (
-            	<div className={classNames('container', 'container--medium', 'mb-5', {'text-center': align_x === 'center', 'text-right': align_x === 'right'})}>
-            		{_.get(section, 'subtitle', null) && (
-            		<div className="section__subtitle">{_.get(section, 'subtitle', null)}</div>
-            		)}
-            		{_.get(section, 'title', null) && (
-            		<h2 className="section__title mt-0">{_.get(section, 'title', null)}</h2>
-            		)}
-            	</div>
-            	)}
-            	<div className="container">
-            		<div className="grid">
-            			{_.map(posts_sorted, (post, post_idx) => {
-            			    let is_post = false;
-            			    if ((_.get(post, 'layout', null) === 'post')) {
-            			         is_post = true;
-            			    }
-            			    return (<React.Fragment key={post_idx + '.1'}>
-                				{(is_post && ((show_recent === false) || (post_count < recent_count))) && ((() => {
-                				     post_count = post_count + 1;
-                				    return (
-                    				<BlogFeedItemFilter key={post_idx} {...this.props} blog_feed_section={section} post_page={post} section_author={section_author} section_category={section_category} section_tag={section_tag} />
-                    				);
-                				})())}
-                			</React.Fragment>)
-            			})}
-            		</div>
-            	</div>
-            	{_.get(section, 'actions', null) && (
-            	<div className="container container--medium mt-4">
-            		<div className={classNames('section__actions', 'btn-group', {'justify-center': align_x === 'center', 'justify-end': align_x === 'right'})}>
-            			<SectionActions {...this.props} actions={_.get(section, 'actions', null)} />
-            		</div>
-            	</div>
-            	)}
+            <article
+                className={classNames('cell-12', 'cell-md-6', 'my-2', {
+                    'cell-lg-4': sectionColumns === 'three'
+                })}
+                {...oid(post.__metadata.id)}
+            >
+                <div
+                    className={classNames('item', {
+                        card: isCard,
+                        'card--highlight': isCard,
+                        'card--vert': isCard
+                    })}
+                >
+                    <div className="flex flex-column">
+                        {image && showImage && (
+                            <div
+                                className={classNames('item__media', 'mb-3', {
+                                    card__media: isCard,
+                                    'card__media--fill': isCard,
+                                    'card__media--top': isCard
+                                })}
+                            >
+                                <Link href={postUrl}>
+                                    <img src={withPrefix(image)} alt={imageAlt} {...fpath('thumb_image.url#@src')} />
+                                </Link>
+                            </div>
+                        )}
+                        <div
+                            className={classNames('item__body', {
+                                'px-3': isCard,
+                                'px-sm-4': isCard,
+                                'pb-3': isCard,
+                                'pb-sm-4': isCard,
+                                'pt-3': isCard && !(image && showImage),
+                                'pt-sm-4': isCard && !(image && showImage)
+                            })}
+                        >
+                            {(showDate || (!_.isEmpty(categories) && showCategories)) && (
+                                <div className="item__meta mb-1">
+                                    {!_.isEmpty(categories) && showCategories && (
+                                        <React.Fragment>
+                                            <BlogPostCategories
+                                                categories={categories}
+                                                data={data}
+                                                containerClass={'item__cat'}
+                                                annotationPrefix="categories"
+                                            />
+                                            {showDate && <span className="item__meta-sep"> &middot; </span>}
+                                        </React.Fragment>
+                                    )}
+                                    {showDate && (
+                                        <span className="item__date">
+                                            <time dateTime={dateTimeAttr} {...fpath('date')}>
+                                                {formattedDate}
+                                            </time>
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            {sectionTitle ? (
+                                <h3
+                                    className={classNames('item__title', 'mt-0', {
+                                        h3: sectionColumns === 'two',
+                                        h4: sectionColumns === 'three'
+                                    })}
+                                >
+                                    <Link href={postUrl} {...fpath('title')}>
+                                        {title}
+                                    </Link>
+                                </h3>
+                            ) : (
+                                <h2
+                                    className={classNames('item__title', 'mt-0', {
+                                        h3: sectionColumns === 'two',
+                                        h4: sectionColumns === 'three'
+                                    })}
+                                >
+                                    <Link href={postUrl} {...fpath('title')}>
+                                        {title}
+                                    </Link>
+                                </h2>
+                            )}
+                            {excerpt && showExcerpt && (
+                                <div className="item__copy">
+                                    <p {...fpath('excerpt')}>{excerpt}</p>
+                                </div>
+                            )}
+                            {author && showAuthor && (
+                                <BlogPostAuthor author={author} data={data} containerClass={'item__byline'} avatarSize={'small'} annotationPrefix="author" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </article>
+        );
+    }
+
+    render() {
+        const data = _.get(this.props, 'data');
+        const section = _.get(this.props, 'section');
+        const title = _.get(section, 'title');
+        const subtitle = _.get(section, 'subtitle');
+        const actions = _.get(section, 'actions');
+        const backgroundColor = _.get(section, 'background_color', 'none');
+        const backgroundImage = _.get(section, 'background_image');
+        const paddingTop = _.get(section, 'padding_top', 'medium');
+        const paddingBottom = _.get(section, 'padding_bottom', 'medium');
+        const alignX = _.get(section, 'align', 'center');
+        const hasBorder = _.get(section, 'has_border');
+        const showRecent = _.get(section, 'show_recent');
+        const recentCount = _.get(section, 'recent_count', 3);
+        let posts = _.orderBy(_.get(this.props, 'posts', []), 'date', 'desc');
+        if (showRecent) {
+            posts = posts.slice(0, recentCount);
+        }
+
+        return (
+            <section
+                className={classNames('section', 'blog-feed', {
+                    'has-border': hasBorder,
+                    'has-cover': backgroundImage,
+                    'bg-none': backgroundColor === 'none',
+                    'bg-primary': backgroundColor === 'primary',
+                    'bg-secondary': backgroundColor === 'secondary',
+                    'pt-4': paddingTop === 'small',
+                    'pt-6': paddingTop === 'medium' || paddingTop === 'large',
+                    'pt-md-7': paddingTop === 'large',
+                    'pb-4': paddingBottom === 'small',
+                    'pb-6': paddingBottom === 'medium' || paddingBottom === 'large',
+                    'pb-md-7': paddingBottom === 'large'
+                })}
+                {...fpath(this.props.annotationPrefix)}
+            >
+                {backgroundImage && <SectionBackground section={section} />}
+                {(title || subtitle) && (
+                    <div
+                        className={classNames('container', 'container--medium', 'mb-5', {
+                            'text-center': alignX === 'center',
+                            'text-right': alignX === 'right'
+                        })}
+                    >
+                        {subtitle && (
+                            <div className="section__subtitle" {...fpath('.subtitle')}>
+                                {subtitle}
+                            </div>
+                        )}
+                        {title && (
+                            <h2 className="section__title mt-0" {...fpath('.title')}>
+                                {title}
+                            </h2>
+                        )}
+                    </div>
+                )}
+                <div className="container">
+                    <div className="grid">
+                        {_.map(posts, (post, index) => {
+                            return <React.Fragment key={index}>{this.renderBlogFeedItemFilter(post, data, section, index)}</React.Fragment>;
+                        })}
+                    </div>
+                </div>
+                {!_.isEmpty(actions) && (
+                    <div className="container container--medium mt-4">
+                        <div
+                            className={classNames('section__actions', 'btn-group', {
+                                'justify-center': alignX === 'center',
+                                'justify-end': alignX === 'right'
+                            })}
+                            {...fpath('.actions')}
+                        >
+                            <SectionActions actions={actions} />
+                        </div>
+                    </div>
+                )}
             </section>
         );
     }

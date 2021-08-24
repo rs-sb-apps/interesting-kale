@@ -1,82 +1,117 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
-import {Helmet} from 'react-helmet';
+import { Helmet } from 'react-helmet';
 import _ from 'lodash';
 
-import {withPrefix, attribute} from '../utils';
-import Announcement from './Announcement';
+import { withPrefix, classNames } from '../utils';
 import Header from './Header';
 import Footer from './Footer';
+import Announcement from './Announcement';
+import NavOverlay from './NavOverlay';
 
 export default class Body extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleVideoEmbeds = this.handleVideoEmbeds.bind(this);
+    }
+
+    componentDidMount() {
+        this.handleVideoEmbeds();
+    }
+
+    componentDidUpdate() {
+        this.handleVideoEmbeds();
+    }
+
+    handleVideoEmbeds() {
+        const videoEmbeds = ['iframe[src*="youtube.com"]', 'iframe[src*="vimeo.com"]'];
+        noframe(videoEmbeds.join(','));
+    }
+
+    renderFontUrl(style, font) {
+        if (style === 'bold') {
+            return (
+                font === 'serif' ? <link href="https://fonts.googleapis.com/css2?family=Arvo:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+                    : <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+            );
+        } else if (style === 'minimal') {
+            return (
+                font === 'serif' ? <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+                    : <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+            );
+        } else {
+            return (
+                font === 'serif' ? <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+                    : <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+            );
+        }
+    }
+
     render() {
-        let style = _.get(this.props, 'data.config.style', null) || 'classic';
-        let font = _.get(this.props, 'data.config.base_font', null) || 'sans-serif';
+        const page = _.get(this.props, 'page');
+        const pageTitle = _.get(page, 'title');
+        const config = _.get(this.props, 'config');
+        const configTitle = _.get(config, 'title');
+        const anncmnt = _.get(config, 'announcement');
+        const hasAnncmnt = _.get(anncmnt, 'has_anncmnt');
+        const anncmntContent = _.get(anncmnt, 'anncmnt_content');
+        const style = _.get(config, 'style', 'classic');
+        const layoutType = _.get(config, 'layout_type', 'full-width');
+        const font = _.get(config, 'base_font', 'sans-serif');
+        const palette = _.get(config, 'palette', 'blue');
+        const mode = _.get(config, 'mode', 'light');
+        const favicon = _.get(config, 'favicon');
+        const domain = _.trim(_.get(config, 'domain', ''), '/');
+        const seo = _.get(page, 'seo');
+        const seoTitle = _.get(seo, 'title');
+        const title = seoTitle ? seoTitle : [pageTitle, configTitle].join(' | ');
+        const seoDescription = _.get(seo, 'description', '');
+        const seoRobots = _.get(seo, 'robots', []).join(',');
+        const seoExtra = _.get(seo, 'extra', []).map((meta, index) => {
+            const keyName = _.get(meta, 'keyName', 'name');
+            const name = _.get(meta, 'name');
+            if (!name) {
+                return null;
+            }
+            const nameAttr = { [keyName]: name };
+            const relativeUrl = _.get(meta, 'relativeUrl');
+            let value = _.get(meta, 'value');
+            if (!value) {
+                return null;
+            }
+            if (relativeUrl) {
+                if (!domain) {
+                    return null;
+                }
+                value = domain + withPrefix(value);
+            }
+            return <meta key={index} {...nameAttr} content={value} />;
+        });
+        const annotationProps = _.pickBy(this.props, (value, key) => key.startsWith('data-sb'));
+
         return (
             <React.Fragment>
                 <Helmet>
-                    <title>{_.get(this.props, 'page.seo.title', null) ? (_.get(this.props, 'page.seo.title', null)) : _.get(this.props, 'page.title', null) + ' | ' + _.get(this.props, 'data.config.title', null)}</title>
-                    <meta charSet="utf-8"/>
-                    <meta name="viewport" content="width=device-width, initialScale=1.0" />
+                    <title>{title}</title>
+                    <meta charSet="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
                     <meta name="google" content="notranslate" />
-                    <meta name="description" content={_.get(this.props, 'page.seo.description', null) || ''} />
-                    {_.get(this.props, 'page.seo.robots', null) && (
-                    <meta name="robots" content={_.join(_.get(this.props, 'page.seo.robots', null), ',')}/>
-                    )}
-                    {_.map(_.get(this.props, 'page.seo.extra', null), (meta, meta_idx) => {
-                        let key_name = _.get(meta, 'keyName', null) || 'name';
-                        return (
-                          _.get(meta, 'relativeUrl', null) ? (
-                            _.get(this.props, 'data.config.domain', null) && ((() => {
-                                let domain = _.trim(_.get(this.props, 'data.config.domain', null), '/');
-                                let rel_url = withPrefix(_.get(meta, 'value', null));
-                                let full_url = domain + rel_url;
-                                return (
-                                  <meta key={meta_idx} {...(attribute(key_name, _.get(meta, 'name', null)))} content={full_url}/>
-                                );
-                            })())
-                          ) : 
-                            <meta key={meta_idx + '.1'} {...(attribute(key_name, _.get(meta, 'name', null)))} content={_.get(meta, 'value', null)}/>
-                        )
-                    })}
-                    {(style === 'bold') ? (
-                      (font === 'serif') ? (
-                      <link href="https://fonts.googleapis.com/css2?family=Arvo:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"/> 
-                      ) : 
-                      <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"/>
-                    ) : ((style === 'classic') ? (
-                      (font === 'serif') ? (
-                      <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"/>
-                      ) : 
-                      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"/>
-                    ) : 
-                      (font === 'serif') ? (
-                      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"/>
-                      ) : 
-                      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet"/>
-                    )}
-                    {_.get(this.props, 'data.config.favicon', null) && (
-                    <link rel="icon" href={withPrefix(_.get(this.props, 'data.config.favicon', null))}/>
-                    )}
-                    <body className={'layout-' + _.get(this.props, 'data.config.layout_type', null) + ' style-' + _.get(this.props, 'data.config.style', null) + ' palette-' + _.get(this.props, 'data.config.palette', null) + ' mode-' + _.get(this.props, 'data.config.mode', null) + ' font-' + _.get(this.props, 'data.config.base_font', null)} />
+                    <meta name="description" content={seoDescription} />
+                    {!_.isEmpty(seoRobots) && <meta name="robots" content={seoRobots} />}
+                    {seoExtra}
+                    {this.renderFontUrl(style, font)}
+                    {favicon && <link rel="icon" href={withPrefix(favicon)} />}
+                    <body className={classNames(`layout-${layoutType}`, `style-${style}`, `palette-${palette}`, `mode-${mode}`, `font-${font}`)} />
                 </Helmet>
-                <div id="site-wrap" className="site">
-                	{(_.get(this.props, 'data.config.header.has_anncmnt', null) && _.get(this.props, 'data.config.header.anncmnt_content', null)) && (
-                		_.get(this.props, 'data.config.header.anncmnt_is_home_only', null) ? (
-                			(_.get(this.props, 'page.stackbit_url_path', null) === '/') && (
-                				<Announcement {...this.props} site={this.props} />
-                			)
-                		) : 
-                			<Announcement {...this.props} site={this.props} />
-                	)}
-                	<Header {...this.props} />
-                	<main id="content" className="site-content">
-                		{this.props.children}
-                	</main>
-                	<Footer {...this.props} />
+                <div id="site-wrap" className="site" {...oid(page.__metadata.id)}>
+                    {hasAnncmnt && anncmntContent && <Announcement page={page} anncmnt={anncmnt} annotationPrefix={`${config.__metadata.id}:announcement`}/>}
+                    <Header page={page} config={config} />
+                    <main id="content" className="site-content" {...annotationProps}>
+                        {this.props.children}
+                    </main>
+                    <Footer config={config} />
                 </div>
-                {(_.get(this.props, 'data.config.header.has_primary_nav', null) || _.get(this.props, 'data.config.header.has_secondary_nav', null)) && (
-                <div className="nav-overlay js-nav-toggle" />
-                )}
+                <NavOverlay config={config} />
             </React.Fragment>
         );
     }

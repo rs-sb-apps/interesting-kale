@@ -1,44 +1,175 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
 import _ from 'lodash';
 
-import {classNames, toStyleObj, withPrefix} from '../utils';
-import Feature from './Feature';
+import { classNames, withPrefix, htmlToReact, markdownify } from '../utils';
+import SectionActions from './SectionActions';
+import SectionBackground from './SectionBackground';
 
 export default class FeaturesSection extends React.Component {
-    render() {
-        let section = _.get(this.props, 'section', null);
-        let align_x = _.get(section, 'align', null) || 'center';
-        let padding_top = _.get(section, 'padding_top', null) || 'medium';
-        let padding_bottom = _.get(section, 'padding_bottom', null) || 'medium';
-        let bg_color = _.get(section, 'background_color', null) || 'none';
-        let bg_img_opacity_pct = _.get(section, 'background_image_opacity', null) || 100;
-        let bg_img_opacity = bg_img_opacity_pct * 0.01;
-        let bg_img_size = _.get(section, 'background_image_size', null) || 'cover';
-        let bg_img_position = _.get(section, 'background_image_position', null) || 'center center';
-        let bg_img_repeat = _.get(section, 'background_image_repeat', null) || 'no-repeat';
-        let feature_padding_y = _.get(section, 'feature_padding_vert', null) || 'medium';
+    renderFeature(feature, index, section) {
+        const sectionTitle = _.get(section, 'title');
+        const title = _.get(feature, 'title');
+        const subtitle = _.get(feature, 'subtitle');
+        const content = _.get(feature, 'content');
+        const image = _.get(feature, 'image');
+        const imageAlt = _.get(feature, 'image_alt', '');
+        const videoEmbed = _.get(feature, 'video_embed_html');
+        const actions = _.get(feature, 'actions');
+        const alignX = _.get(feature, 'align', 'left');
+        const paddingY = _.get(feature, 'feature_padding_vert', 'medium');
+        const mediaWidth = _.get(feature, 'media_width', 'fifty');
+        const mediaPosition = _.get(feature, 'media_position', 'top');
+        const hasText = title || subtitle || content || !_.isEmpty(actions);
+        const hasMedia = image || videoEmbed;
+        const isHorizontal = hasText && hasMedia && (mediaPosition === 'left' || mediaPosition === 'right');
+
         return (
-            <section className={classNames('section', 'features', {'has-border': _.get(section, 'has_border', null), 'has-cover': _.get(section, 'background_image', null), 'bg-none': bg_color === 'none', 'bg-primary': bg_color === 'primary', 'bg-secondary': bg_color === 'secondary', 'pt-4': padding_top === 'small', 'pt-6': (padding_top === 'medium') || (padding_top === 'large'), 'pt-md-7': padding_top === 'large', 'pb-4': padding_bottom === 'small', 'pb-6': (padding_bottom === 'medium') || (padding_bottom === 'large'), 'pb-md-7': padding_bottom === 'large'})}>
-            	{_.get(section, 'background_image', null) && (
-            	<div className="cover-img" style={toStyleObj('background-image: url(\'' + withPrefix(_.get(section, 'background_image', null)) + '\'); opacity: ' + bg_img_opacity + '; background-size: ' + bg_img_size + '; background-repeat: ' + bg_img_repeat + '; background-position: ' + bg_img_position)}/>
-            	)}
-            	{(_.get(section, 'title', null) || _.get(section, 'subtitle', null)) && (
-            	<div className={classNames('container', 'container--medium', {'mb-5': (feature_padding_y === 'small') || (feature_padding_y === 'medium'), 'mb-4': feature_padding_y === 'large', 'text-center': align_x === 'center', 'text-right': align_x === 'right'})}>
-            		{_.get(section, 'subtitle', null) && (
-            		<div className="section__subtitle">{_.get(section, 'subtitle', null)}</div>
-            		)}
-            		{_.get(section, 'title', null) && (
-            		<h2 className="section__title mt-0">{_.get(section, 'title', null)}</h2>
-            		)}
-            	</div>
-            	)}
-            	{_.get(section, 'features', null) && (
-            	<div className="container">
-            		{_.map(_.get(section, 'features', null), (feature, feature_idx) => (
-            			<Feature key={feature_idx} {...this.props} section={section} feature={feature} />
-            		))}
-            	</div>
-            	)}
+            <div
+                key={index}
+                className={classNames('feature', {
+                    'maxw-medium': !isHorizontal,
+                    'mx-auto': !isHorizontal,
+                    'py-0': paddingY === 'small',
+                    'py-1': paddingY !== 'small',
+                    'py-sm-3': paddingY === 'large'
+                })}
+                {...fpath(`.${index}`)}
+            >
+                <div className="item__content grid items-center">
+                    {hasMedia && (
+                        <div
+                            className={classNames('feature__media', 'my-2', 'cell-12', {
+                                'cell-md-4': isHorizontal && mediaWidth === 'thirty-three',
+                                'cell-md-5': isHorizontal && mediaWidth === 'fourty',
+                                'cell-md-6': isHorizontal && mediaWidth === 'fifty',
+                                'cell-md-7': isHorizontal && mediaWidth === 'sixty'
+                            })}
+                            {...(videoEmbed ? { 'data-sb-field-path': '.video_embed_html#.' } : {})}
+                        >
+                            {videoEmbed ? (
+                                htmlToReact(videoEmbed)
+                            ) : (
+                                <img
+                                    src={withPrefix(image)}
+                                    alt={imageAlt}
+                                    className={classNames({
+                                        'mx-auto': alignX === 'center',
+                                        'ml-auto': alignX === 'right'
+                                    })}
+                                    {...fpath('.image.url#@src .image_alt#@alt')}
+                                />
+                            )}
+                        </div>
+                    )}
+                    {hasText && (
+                        <div
+                            className={classNames('feature__body', 'my-2', 'cell-12', {
+                                'cell-md-8': isHorizontal && mediaWidth === 'thirty-three',
+                                'cell-md-7': isHorizontal && mediaWidth === 'fourty',
+                                'cell-md-6': isHorizontal && mediaWidth === 'fifty',
+                                'cell-md-5': isHorizontal && mediaWidth === 'sixty',
+                                'order-md-first': hasMedia && mediaPosition === 'right',
+                                'order-first': hasMedia && mediaPosition === 'bottom',
+                                'text-center': alignX === 'center',
+                                'text-right': alignX === 'right'
+                            })}
+                        >
+                            {title &&
+                                (sectionTitle ? (
+                                    <h3 className="feature__title h2" {...fpath('.title')}>
+                                        {title}
+                                    </h3>
+                                ) : (
+                                    <h2 className="feature__title h2" {...fpath('.title')}>
+                                        {title}
+                                    </h2>
+                                ))}
+                            {subtitle && (
+                                <p className="feature__subtitle" {...fpath('.subtitle')}>
+                                    {subtitle}
+                                </p>
+                            )}
+                            {content && (
+                                <div className="feature__copy" {...fpath('.content')}>
+                                    {markdownify(content)}
+                                </div>
+                            )}
+                            {!_.isEmpty(actions) && (
+                                <div
+                                    className={classNames('feature__actions', 'btn-group', {
+                                        'justify-center': alignX === 'center',
+                                        'justify-end': alignX === 'right'
+                                    })}
+                                    {...fpath('.actions')}
+                                >
+                                    <SectionActions actions={actions} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    render() {
+        const section = _.get(this.props, 'section');
+        const title = _.get(section, 'title');
+        const subtitle = _.get(section, 'subtitle');
+        const backgroundColor = _.get(section, 'background_color', 'none');
+        const backgroundImage = _.get(section, 'background_image');
+        const paddingTop = _.get(section, 'padding_top', 'medium');
+        const paddingBottom = _.get(section, 'padding_bottom', 'medium');
+        const alignX = _.get(section, 'align', 'center');
+        const hasBorder = _.get(section, 'has_border');
+        const features = _.get(section, 'features');
+        const featurePaddingY = _.get(section, 'feature_padding_vert', 'medium');
+
+        return (
+            <section
+                className={classNames('section', 'features', {
+                    'has-border': hasBorder,
+                    'has-cover': backgroundImage,
+                    'bg-none': backgroundColor === 'none',
+                    'bg-primary': backgroundColor === 'primary',
+                    'bg-secondary': backgroundColor === 'secondary',
+                    'pt-4': paddingTop === 'small',
+                    'pt-6': paddingTop === 'medium' || paddingTop === 'large',
+                    'pt-md-7': paddingTop === 'large',
+                    'pb-4': paddingBottom === 'small',
+                    'pb-6': paddingBottom === 'medium' || paddingBottom === 'large',
+                    'pb-md-7': paddingBottom === 'large'
+                })}
+                {...fpath(this.props.annotationPrefix)}
+            >
+                {backgroundImage && <SectionBackground section={section} />}
+                {(title || subtitle) && (
+                    <div
+                        className={classNames('container', 'container--medium', {
+                            'mb-5': featurePaddingY === 'small' || featurePaddingY === 'medium',
+                            'mb-4': featurePaddingY === 'large',
+                            'text-center': alignX === 'center',
+                            'text-right': alignX === 'right'
+                        })}
+                    >
+                        {subtitle && (
+                            <div className="section__subtitle" {...fpath('.subtitle')}>
+                                {subtitle}
+                            </div>
+                        )}
+                        {title && (
+                            <h2 className="section__title mt-0" {...fpath('.title')}>
+                                {title}
+                            </h2>
+                        )}
+                    </div>
+                )}
+                {!_.isEmpty(features) && (
+                    <div className="container" {...fpath('.features')}>
+                        {_.map(features, (feature, index) => this.renderFeature(feature, index, section))}
+                    </div>
+                )}
             </section>
         );
     }

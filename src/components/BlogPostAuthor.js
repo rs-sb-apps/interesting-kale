@@ -1,36 +1,60 @@
+import { oid, fpath } from '../utils/annotations';
 import React from 'react';
 import _ from 'lodash';
 
-import {Link, withPrefix, classNames} from '../utils';
+import {getData, Link, withPrefix, classNames} from '../utils';
 
 export default class BlogPostAuthor extends React.Component {
     render() {
-        let author = _.get(this.props, 'author', null);
-        let container_class = _.get(this.props, 'container_class', null);
-        let avatar_size = _.get(this.props, 'avatar_size', null);
-        let author_data = author;
-        return (
-            <div className={container_class}>
-            	{author_data.link ? (
-            	<Link className="flex items-center" href={withPrefix(author_data.link)}>
-            		{author_data.photo && (
-            		<figure className={classNames('avatar', 'mr-1', {'avatar--small': avatar_size === 'small'})}>
-            			<img className="avatar__img" src={withPrefix(author_data.photo)} alt={author_data.photo_alt} />
-            		</figure>
-            		)}
-            		<span>{author_data.first_name} {author_data.last_name}</span>
-            	</Link>
-            	) : 
-            	<div className="flex items-center">
-            		{author_data.photo && (
-            		<figure className={classNames('avatar', 'mr-2', {'avatar--small': avatar_size === 'small'})}>
-            			<img className="avatar__img" src={withPrefix(author_data.photo)} alt={author_data.photo_alt} />
-            		</figure>
-            		)}
-            		<span>{author_data.first_name} {author_data.last_name}</span>
-            	</div>
-            	}
-            </div>
-        );
+        const data = _.get(this.props, 'data');
+        const authorRef = _.get(this.props, 'author');
+        const author = getData(data, authorRef);
+        if (!author) {
+            return null;
+        }
+        const containerClass = _.get(this.props, 'containerClass', '');
+        const avatarSize = _.get(this.props, 'avatarSize', 'medium');
+        const authorAvatar = author.photo;
+        const authorAvatarAlt = author.photo_alt || '';
+        const authorFirstName = author.first_name || '';
+        const authorLastName = author.last_name || '';
+
+        const annotationPrefix = _.get(this.props, 'annotationPrefix', '');
+
+        if (author.link) {
+            return (
+                <div className={containerClass} {...fpath(annotationPrefix)}>
+                    <Link className="flex items-center" href={withPrefix(author.link)}>
+                        {authorAvatar && (
+                            <figure
+                                className={classNames('avatar', 'mr-2', {
+                                    'avatar--small': avatarSize === 'small'
+                                })}
+                            >
+                                <img className="avatar__img" src={withPrefix(authorAvatar)} alt={authorAvatarAlt} {...fpath('.photo.url#@src')}/>
+                            </figure>
+                        )}
+                        <span {...fpath('.first_name .last_name')}>{_.trim(`${authorFirstName} ${authorLastName}`)}</span>
+                    </Link>
+                </div>
+            );
+        } else {
+            return (
+                <div className={containerClass}>
+                    <div className="flex items-center">
+                        {authorAvatar && (
+                            <figure
+                                className={classNames('avatar', 'mr-2', {
+                                    'avatar--small': avatarSize === 'small'
+                                })}
+                            >
+                                <img className="avatar__img" src={withPrefix(authorAvatar)} alt={authorAvatarAlt} {...fpath('.photo.url#@src')}/>
+                            </figure>
+                        )}
+                        <span {...fpath('.first_name .last_name')}>{_.trim(`${authorFirstName} ${authorLastName}`)}</span>
+                    </div>
+                </div>
+            );
+        }
     }
 }
