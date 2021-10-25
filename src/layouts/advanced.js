@@ -17,7 +17,7 @@ export default class Advanced extends React.Component {
         return (
             <Layout page={page} config={config} {...fpath('sections')}>
                 {_.map(sections, (section, index) => {
-                    const sectionType = _.get(section, 'type');
+                    const sectionType = _.get(section, '__metadata.modelName');
                     const component = _.upperFirst(_.camelCase(sectionType));
                     if (!component) {
                         throw new Error(`page section does not have the 'type' property, page: ${pageUrl}`);
