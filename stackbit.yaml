@@ -12,7 +12,7 @@ import:
   type: contentful
   contentFile: contentful-export/export.json
   spaceIdEnvVar: CONTENTFUL_SPACE_ID
-  accessTokenEnvVar: CONTENTFUL_ACCESS_TOKEN
+  accessTokenEnvVar: CONTENTFUL_DELIVERY_TOKEN # weird due to legacy Gatsby support
 logicFields:
   - blog_feed_section.recent_count
   - blog_feed_section.background_image_opacity
