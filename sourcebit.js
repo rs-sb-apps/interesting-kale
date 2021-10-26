@@ -32,7 +32,8 @@ module.exports = {
                 ],
                 commonProps: (items) => {
                     return {
-                        pages: _.filter(items, item => ["page","post","advanced"].includes(_.get(item, '__metadata.modelName'))),
+                        pages: _.filter(items, item => ['page', 'post', 'advanced'].includes(_.get(item, '__metadata.modelName'))),
+                        posts: _.filter(items, item => _.get(item, '__metadata.modelName') === 'post'),
                         data: {
                             config: _.find(items, _.matchesProperty('__metadata.modelName', 'config'))
                         }
